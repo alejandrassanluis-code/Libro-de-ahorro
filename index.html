@@ -1,0 +1,486 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no">
+<title>Libro de ahorro</title>
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Ahorro">
+<meta name="theme-color" content="#10161d">
+<link rel="manifest" href="manifest.json">
+<link rel="apple-touch-icon" href="icon-180.png">
+<link rel="icon" href="icon-180.png">
+<style>
+  :root{
+    --bg:#10161d; --bg2:#0b1015; --surface:#1a222b; --surface2:#212b35;
+    --border:rgba(237,232,216,0.09); --borderStrong:rgba(237,232,216,0.18);
+    --paper:#efe8d8; --ink:#232a1f; --text:#ede8dc; --textMuted:#8b93a0; --textFaint:#5b6472;
+    --green:#7faa8c; --greenDark:#4c7a6d; --rust:#c1694b; --gold:#c9a227;
+    --fontDisplay:'Iowan Old Style','Palatino Linotype',Georgia,'Times New Roman',serif;
+    --fontBody:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;
+    --fontMono:'SF Mono','SFMono-Regular',Menlo,Consolas,'Liberation Mono',monospace;
+  }
+  *{box-sizing:border-box; -webkit-tap-highlight-color:transparent;}
+  html,body{margin:0; padding:0; background:var(--bg); color:var(--text); font-family:var(--fontBody);}
+  body{padding-bottom:96px; min-height:100vh;}
+  #app{max-width:640px; margin:0 auto;}
+  .header{background:linear-gradient(180deg,var(--bg2),var(--bg)); border-bottom:1px solid var(--border); padding:22px 16px 18px;}
+  .eyebrow{font-family:var(--fontDisplay); font-size:13px; letter-spacing:1.5px; text-transform:uppercase; color:var(--textFaint);}
+  .ledger-strip{
+    margin-top:10px; background:var(--paper); border-radius:12px; padding:16px;
+    display:flex; justify-content:space-between; align-items:flex-end;
+    background-image:repeating-linear-gradient(180deg, transparent 0, transparent 27px, rgba(35,42,31,0.06) 28px);
+  }
+  .ledger-label{font-size:12px; color:var(--ink); opacity:.65;}
+  .ledger-value{font-family:var(--fontMono); font-size:30px; font-weight:600; color:var(--ink); font-variant-numeric:tabular-nums;}
+  .ledger-sub{font-family:var(--fontMono); font-size:20px; font-weight:600; font-variant-numeric:tabular-nums;}
+  .month-nav{display:flex; align-items:center; justify-content:center; gap:14px; padding:14px 16px 4px;}
+  .icon-btn{width:34px; height:34px; border-radius:50%; border:1px solid var(--borderStrong); background:var(--surface); color:var(--text); display:flex; align-items:center; justify-content:center; cursor:pointer;}
+  .month-label{font-family:var(--fontDisplay); font-size:17px; min-width:170px; text-align:center;}
+  main{padding:14px 16px 0;}
+  .card{background:var(--surface); border:1px solid var(--border); border-radius:12px; padding:16px; margin-bottom:14px;}
+  .card-head{display:flex; align-items:center; justify-content:space-between; margin-bottom:12px;}
+  .card-title{font-family:var(--fontDisplay); font-size:16px;}
+  .stat-grid{display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-bottom:14px;}
+  .stat-card{background:var(--surface); border:1px solid var(--border); border-radius:12px; padding:14px;}
+  .stat-label{font-size:12px; color:var(--textMuted); text-transform:uppercase; letter-spacing:.5px; margin-bottom:8px;}
+  .stat-value{font-family:var(--fontMono); font-size:19px; font-weight:600; font-variant-numeric:tabular-nums;}
+  .leader-row{display:flex; align-items:baseline; margin-bottom:9px;}
+  .leader-label{font-size:13.5px; white-space:nowrap;}
+  .leader-dots{flex:1; border-bottom:1px dotted var(--borderStrong); margin:0 6px; position:relative; top:-4px;}
+  .leader-value{font-family:var(--fontMono); font-size:13.5px; font-variant-numeric:tabular-nums;}
+  .row{display:flex; align-items:center; justify-content:space-between; padding:10px 0; border-bottom:1px solid var(--border);}
+  .row:last-child{border-bottom:none;}
+  .chip-row{display:flex; gap:6px; margin-bottom:8px;}
+  .chip{flex:1; padding:8px 6px; border-radius:8px; border:1px solid var(--borderStrong); background:transparent; color:var(--textMuted); font-size:12.5px; cursor:pointer;}
+  .chip.active{background:var(--green); border-color:var(--green); color:var(--bg2); font-weight:600;}
+  .input,select{width:100%; padding:10px 12px; border-radius:8px; border:1px solid var(--borderStrong); background:var(--surface2); color:var(--text); font-size:14px; font-family:var(--fontBody); margin-bottom:8px;}
+  .btn-primary{width:100%; padding:11px; border-radius:8px; border:none; background:var(--green); color:var(--bg2); font-weight:600; font-size:14px; cursor:pointer;}
+  .btn-mini{display:flex; align-items:center; gap:4px; padding:6px 10px; border-radius:20px; border:1px solid var(--borderStrong); background:transparent; color:var(--text); font-size:12.5px; cursor:pointer;}
+  .btn-del{border:none; background:none; color:var(--textFaint); cursor:pointer; padding:4px; font-size:14px;}
+  .empty{font-size:13px; color:var(--textFaint); font-style:italic; padding:4px 0;}
+  .form-block{display:flex; flex-direction:column; margin-bottom:14px; padding-bottom:14px; border-bottom:1px dashed var(--border);}
+  .goal-row{display:flex; align-items:center; gap:12px;}
+  .goal-row input[type=range]{flex:1; accent-color:var(--green);}
+  .goal-val{font-family:var(--fontMono); font-size:15px; min-width:44px; text-align:right;}
+  .goal-track{margin-top:10px; height:8px; border-radius:4px; background:rgba(255,255,255,0.08); overflow:hidden;}
+  .goal-fill{height:100%; transition:width .4s ease;}
+  .goal-note{font-size:12px; color:var(--textMuted); margin-top:6px;}
+  .sim-result{margin-top:16px; background:var(--paper); border-radius:10px; padding:14px;}
+  .sim-head{display:flex; align-items:center; gap:6px; color:var(--greenDark); margin-bottom:8px; font-size:12px; text-transform:uppercase; letter-spacing:.5px;}
+  .sim-value{font-family:var(--fontMono); font-size:24px; font-weight:600; color:var(--ink);}
+  .sim-horizons{display:flex; gap:16px; margin-top:12px;}
+  .sim-h-label{font-size:11px; color:var(--ink); opacity:.6;}
+  .sim-h-value{font-family:var(--fontMono); font-size:15px; color:var(--ink);}
+  .tabbar{position:fixed; bottom:0; left:0; right:0; background:var(--bg2); border-top:1px solid var(--border); display:flex; padding:8px 6px calc(8px + env(safe-area-inset-bottom));}
+  .tab-btn{flex:1; display:flex; flex-direction:column; align-items:center; gap:3px; background:none; border:none; padding:6px 2px; cursor:pointer; color:var(--textFaint); font-family:var(--fontBody);}
+  .tab-btn.active{color:var(--green);}
+  .tab-btn span{font-size:10.5px;}
+  svg.chart{width:100%; height:180px; display:block;}
+  .save-banner{position:fixed; bottom:84px; left:16px; right:16px; background:var(--rust); color:var(--paper); padding:12px 14px; border-radius:10px; font-size:13px; display:none; flex-direction:column; gap:8px; max-width:608px; margin:0 auto;}
+  .save-banner.show{display:flex;}
+  .save-banner .btn-mini{align-self:flex-start; background:var(--paper); color:var(--rust); border:none;}
+  @media (prefers-reduced-motion: reduce){ *{transition:none !important;} }
+</style>
+</head>
+<body>
+<div id="app"></div>
+<div id="saveBanner" class="save-banner">
+  <div>
+    <div style="font-weight:600; margin-bottom:2px;">No se pudo guardar</div>
+    <div style="opacity:.85; font-size:12px;" id="saveBannerDetail"></div>
+  </div>
+</div>
+
+<script>
+/* ---------------- helpers ---------------- */
+const CAT_FIJO = ['Vivienda','Suministros','Seguros','Suscripciones','Transporte','Otros fijos'];
+const CAT_VARIABLE = ['Alimentación','Ocio','Restaurantes','Ropa','Salud','Otros variables'];
+const STORAGE_KEY = 'finance-tracker-standalone-v1';
+
+const uid = () => Math.random().toString(36).slice(2,10);
+const currentYM = () => new Date().toISOString().slice(0,7);
+const fmtEUR = (n, d=0) => new Intl.NumberFormat('es-ES',{style:'currency',currency:'EUR',maximumFractionDigits:d,minimumFractionDigits:d}).format(n||0);
+const monthLabel = (ym) => {
+  const [y,m] = ym.split('-').map(Number);
+  const s = new Date(y,m-1,1).toLocaleDateString('es-ES',{month:'long',year:'numeric'});
+  return s.charAt(0).toUpperCase()+s.slice(1);
+};
+const shiftMonth = (ym, delta) => {
+  const [y,m] = ym.split('-').map(Number);
+  const d = new Date(y,m-1+delta,1);
+  return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`;
+};
+const esc = (s) => String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+
+/* ---------------- state ---------------- */
+let state = { transactions: [], investments: [], goalPct: 20 };
+let ui = { tab: 'resumen', month: currentYM(), formOpen: false, txType: 'variable', simCategory: '' };
+
+function loadState(){
+  try{
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if(raw) state = JSON.parse(raw);
+  }catch(err){
+    showSaveError('No se pudo leer lo guardado anteriormente: ' + err.message);
+  }
+}
+function saveState(){
+  try{
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+    hideSaveError();
+  }catch(err){
+    showSaveError(err.message || 'Error desconocido al guardar.');
+  }
+}
+function showSaveError(msg){
+  document.getElementById('saveBannerDetail').textContent = msg;
+  document.getElementById('saveBanner').classList.add('show');
+}
+function hideSaveError(){
+  document.getElementById('saveBanner').classList.remove('show');
+}
+
+/* ---------------- derived ---------------- */
+function monthTx(){ return state.transactions.filter(t => t.month === ui.month); }
+function sumBy(list, pred){ return list.filter(pred).reduce((s,t)=>s+t.amount,0); }
+function categoryBreakdown(){
+  const map = {};
+  monthTx().filter(t=>t.type!=='ingreso').forEach(t=>{ map[t.category]=(map[t.category]||0)+t.amount; });
+  return Object.entries(map).sort((a,b)=>b[1]-a[1]);
+}
+function totalInvertido(){ return state.investments.reduce((s,i)=>s+i.amount,0); }
+function patrimonio(){
+  return state.transactions.reduce((s,t)=>s+(t.type==='ingreso'?t.amount:-t.amount),0) + totalInvertido();
+}
+function evolution(){
+  const months = Array.from(new Set(state.transactions.map(t=>t.month))).sort();
+  return months.map(m=>{
+    const tx = state.transactions.filter(t=>t.month===m);
+    const inc = sumBy(tx, t=>t.type==='ingreso');
+    const exp = sumBy(tx, t=>t.type!=='ingreso');
+    return { month:m, label: monthLabel(m).split(' ')[0], ingresos:inc, gastos:exp, ahorro: inc-exp };
+  });
+}
+
+/* ---------------- actions ---------------- */
+function addTransaction(tx){ state.transactions.push({id:uid(), ...tx}); saveState(); render(); }
+function removeTransaction(id){ state.transactions = state.transactions.filter(t=>t.id!==id); saveState(); render(); }
+function addInvestment(inv){ state.investments.push({id:uid(), ...inv}); saveState(); render(); }
+function removeInvestment(id){ state.investments = state.investments.filter(i=>i.id!==id); saveState(); render(); }
+function setGoalPct(v){ state.goalPct = Number(v); saveState(); render(); }
+function updateGoalUI(v){
+  const goalPct = Number(v);
+  const ingresos = sumBy(monthTx(), t=>t.type==='ingreso');
+  const ahorro = ingresos - sumBy(monthTx(), t=>t.type!=='ingreso');
+  const ahorroPct = ingresos>0 ? (ahorro/ingresos)*100 : 0;
+  const fillPct = Math.max(0, Math.min(100, (ahorroPct/(goalPct||1))*100));
+  const fillColor = ahorroPct >= goalPct ? 'var(--green)' : 'var(--gold)';
+  const note = ahorroPct >= goalPct
+    ? 'Vas por delante de tu objetivo este mes.'
+    : `Te faltan ${fmtEUR(Math.max(0,(goalPct/100)*ingresos - ahorro))} para llegar a tu objetivo.`;
+  const label = document.getElementById('goalValLabel');
+  const bar = document.getElementById('goalFillBar');
+  const noteEl = document.getElementById('goalNoteText');
+  if(label) label.textContent = goalPct + '%';
+  if(bar){ bar.style.width = fillPct + '%'; bar.style.background = fillColor; }
+  if(noteEl) noteEl.textContent = note;
+}
+function setTab(t){ ui.tab = t; ui.formOpen = false; render(); }
+function navMonth(delta){ ui.month = shiftMonth(ui.month, delta); render(); }
+function toggleForm(){ ui.formOpen = !ui.formOpen; render(); }
+function setTxType(t){
+  ui.txType = t;
+  render();
+}
+
+function submitTransaction(){
+  const amountEl = document.getElementById('txAmount');
+  const noteEl = document.getElementById('txNote');
+  const catEl = document.getElementById('txCategory');
+  const amt = parseFloat((amountEl.value||'').replace(',','.'));
+  if(!amt || amt<=0) return;
+  const category = ui.txType === 'ingreso' ? 'Ingreso' : (catEl ? catEl.value : CAT_VARIABLE[0]);
+  addTransaction({ type: ui.txType, category, amount: amt, month: ui.month, note: (noteEl.value||'').trim() });
+}
+function submitInvestment(){
+  const nameEl = document.getElementById('invName');
+  const amountEl = document.getElementById('invAmount');
+  const amt = parseFloat((amountEl.value||'').replace(',','.'));
+  const name = (nameEl.value||'').trim();
+  if(!amt || amt<=0 || !name) return;
+  addInvestment({ name, amount: amt, month: currentYM() });
+}
+function setSimCategory(v){ ui.simCategory = v; render(); }
+function recalcSim(){ render(); }
+
+/* ---------------- icons (inline svg, minimal) ---------------- */
+const ICONS = {
+  chevronLeft: `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 18 9 12 15 6"/></svg>`,
+  chevronRight: `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg>`,
+  plus: `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>`,
+  trash: `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>`,
+  grid: `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>`,
+  list: `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg>`,
+  bank: `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="3" y1="21" x2="21" y2="21"/><line x1="5" y1="21" x2="5" y2="10"/><line x1="19" y1="21" x2="19" y2="10"/><polygon points="12 3 21 8 3 8"/></svg>`,
+  wand: `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 4V2m0 20v-2M8 9H6m2 6H6m14-6h-2m2 6h-2M4.5 4.5l1.5 1.5m11-1.5-1.5 1.5m0 12 1.5 1.5m-11 0 1.5-1.5"/><path d="M12 9l2 2-8 8-2-2z"/></svg>`
+};
+
+/* ---------------- chart ---------------- */
+function renderChart(){
+  const data = evolution();
+  if(data.length < 2){
+    return `<div class="empty">Añade movimientos en al menos dos meses para ver la evolución.</div>`;
+  }
+  const w = 600, h = 180, padL = 34, padR = 6, padT = 10, padB = 20;
+  const allVals = data.flatMap(d=>[d.ingresos, d.gastos, d.ahorro]);
+  const max = Math.max(...allVals, 1);
+  const min = Math.min(...allVals, 0);
+  const x = i => padL + (i/(data.length-1)) * (w - padL - padR);
+  const y = v => padT + (1 - (v-min)/(max-min || 1)) * (h - padT - padB);
+  const line = (key) => data.map((d,i)=>`${i===0?'M':'L'}${x(i).toFixed(1)},${y(d[key]).toFixed(1)}`).join(' ');
+  const gridY = [min, (min+max)/2, max];
+  const labels = data.map((d,i)=>`<text x="${x(i).toFixed(1)}" y="${h-4}" font-size="10" fill="var(--textFaint)" text-anchor="middle">${esc(d.label)}</text>`).join('');
+  const grid = gridY.map(v=>`<line x1="${padL}" x2="${w-padR}" y1="${y(v).toFixed(1)}" y2="${y(v).toFixed(1)}" stroke="rgba(255,255,255,0.06)" stroke-dasharray="3 3"/>`).join('');
+  return `
+    <svg class="chart" viewBox="0 0 ${w} ${h}" preserveAspectRatio="none">
+      ${grid}
+      <path d="${line('ingresos')}" fill="none" stroke="var(--green)" stroke-width="2"/>
+      <path d="${line('gastos')}" fill="none" stroke="var(--rust)" stroke-width="2"/>
+      <path d="${line('ahorro')}" fill="none" stroke="var(--gold)" stroke-width="2"/>
+      ${labels}
+    </svg>
+    <div style="display:flex; gap:14px; font-size:11px; color:var(--textMuted); margin-top:4px;">
+      <span><span style="color:var(--green)">●</span> Ingresos</span>
+      <span><span style="color:var(--rust)">●</span> Gastos</span>
+      <span><span style="color:var(--gold)">●</span> Ahorro</span>
+    </div>`;
+}
+
+/* ---------------- render sections ---------------- */
+function renderResumen(){
+  const ingresos = sumBy(monthTx(), t=>t.type==='ingreso');
+  const gastosFijos = sumBy(monthTx(), t=>t.type==='fijo');
+  const gastosVariables = sumBy(monthTx(), t=>t.type==='variable');
+  const gastosTotal = gastosFijos + gastosVariables;
+  const ahorro = ingresos - gastosTotal;
+  const ahorroPct = ingresos>0 ? (ahorro/ingresos)*100 : 0;
+  const cats = categoryBreakdown();
+  const goalPct = state.goalPct;
+  const fillPct = Math.max(0, Math.min(100, (ahorroPct/(goalPct||1))*100));
+  const fillColor = ahorroPct >= goalPct ? 'var(--green)' : 'var(--gold)';
+  const note = ahorroPct >= goalPct
+    ? 'Vas por delante de tu objetivo este mes.'
+    : `Te faltan ${fmtEUR(Math.max(0,(goalPct/100)*ingresos - ahorro))} para llegar a tu objetivo.`;
+
+  return `
+    <div class="stat-grid">
+      <div class="stat-card"><div class="stat-label" style="color:var(--green)">Ingresos</div><div class="stat-value">${fmtEUR(ingresos)}</div></div>
+      <div class="stat-card"><div class="stat-label" style="color:var(--rust)">Gastos</div><div class="stat-value">${fmtEUR(gastosTotal)}</div></div>
+      <div class="stat-card"><div class="stat-label" style="color:${ahorro>=0?'var(--green)':'var(--rust)'}">Ahorro del mes</div><div class="stat-value">${fmtEUR(ahorro)}</div></div>
+      <div class="stat-card"><div class="stat-label" style="color:var(--gold)">Invertido (total)</div><div class="stat-value">${fmtEUR(totalInvertido())}</div></div>
+    </div>
+    <div class="card">
+      <div class="card-head"><div class="card-title">Objetivo de ahorro</div></div>
+      <div class="goal-row">
+        <input type="range" min="0" max="60" value="${goalPct}" oninput="updateGoalUI(this.value)" onchange="setGoalPct(this.value)">
+        <span class="goal-val" id="goalValLabel">${goalPct}%</span>
+      </div>
+      <div class="goal-track"><div class="goal-fill" id="goalFillBar" style="width:${fillPct}%; background:${fillColor};"></div></div>
+      <div class="goal-note" id="goalNoteText">${note}</div>
+    </div>
+    <div class="card">
+      <div class="card-head"><div class="card-title">Gastos por categoría</div></div>
+      ${cats.length===0 ? `<div class="empty">Sin gastos registrados este mes.</div>` :
+        cats.map(([cat,amt])=>`
+          <div class="leader-row">
+            <span class="leader-label">${esc(cat)}</span>
+            <span class="leader-dots"></span>
+            <span class="leader-value">${fmtEUR(amt)}</span>
+          </div>`).join('')}
+    </div>
+    <div class="card">
+      <div class="card-head"><div class="card-title">Evolución mensual</div></div>
+      ${renderChart()}
+    </div>
+  `;
+}
+
+function renderMovimientos(){
+  const list = [...monthTx()].sort((a,b)=>(a.type==='ingreso'?-1:1)-(b.type==='ingreso'?-1:1));
+  const categories = ui.txType==='fijo' ? CAT_FIJO : ui.txType==='variable' ? CAT_VARIABLE : ['Ingreso'];
+  return `
+    <div class="card">
+      <div class="card-head">
+        <div class="card-title">Movimientos del mes</div>
+        <button class="btn-mini" onclick="toggleForm()">${ICONS.plus} Añadir</button>
+      </div>
+      ${ui.formOpen ? `
+        <div class="form-block">
+          <div class="chip-row">
+            <button class="chip ${ui.txType==='ingreso'?'active':''}" onclick="setTxType('ingreso')">Ingreso</button>
+            <button class="chip ${ui.txType==='fijo'?'active':''}" onclick="setTxType('fijo')">Gasto fijo</button>
+            <button class="chip ${ui.txType==='variable'?'active':''}" onclick="setTxType('variable')">Gasto variable</button>
+          </div>
+          ${ui.txType!=='ingreso' ? `
+            <select id="txCategory">${categories.map(c=>`<option value="${esc(c)}">${esc(c)}</option>`).join('')}</select>
+          ` : ''}
+          <input class="input" id="txAmount" type="number" inputmode="decimal" placeholder="Importe (€)">
+          <input class="input" id="txNote" type="text" placeholder="Nota (opcional)">
+          <button class="btn-primary" onclick="submitTransaction()">Guardar movimiento</button>
+        </div>` : ''}
+      ${list.length===0 ? `<div class="empty">Aún no hay movimientos este mes.</div>` :
+        list.map(t=>`
+          <div class="row">
+            <div>
+              <div style="font-size:14px;">${esc(t.category)}${t.note?` · ${esc(t.note)}`:''}</div>
+              <div style="font-size:11px; color:var(--textFaint);">${t.type==='ingreso'?'Ingreso':t.type==='fijo'?'Gasto fijo':'Gasto variable'}</div>
+            </div>
+            <div style="display:flex; align-items:center; gap:10px;">
+              <span style="font-family:var(--fontMono); font-variant-numeric:tabular-nums; color:${t.type==='ingreso'?'var(--green)':'var(--rust)'}; font-size:14px;">${t.type==='ingreso'?'+':'−'}${fmtEUR(t.amount)}</span>
+              <button class="btn-del" onclick="removeTransaction('${t.id}')">${ICONS.trash}</button>
+            </div>
+          </div>`).join('')}
+    </div>
+  `;
+}
+
+function renderInversiones(){
+  const sorted = [...state.investments].sort((a,b)=>(a.month<b.month?1:-1));
+  return `
+    <div class="stat-card" style="margin-bottom:14px;">
+      <div class="stat-label" style="color:var(--gold)">Total invertido</div>
+      <div class="stat-value">${fmtEUR(totalInvertido())}</div>
+    </div>
+    <div class="card">
+      <div class="card-head">
+        <div class="card-title">Aportaciones</div>
+        <button class="btn-mini" onclick="toggleForm()">${ICONS.plus} Añadir</button>
+      </div>
+      ${ui.formOpen ? `
+        <div class="form-block">
+          <input class="input" id="invName" type="text" placeholder="Producto o cuenta (ej. Fondo indexado)">
+          <input class="input" id="invAmount" type="number" inputmode="decimal" placeholder="Importe aportado (€)">
+          <button class="btn-primary" onclick="submitInvestment()">Registrar aportación</button>
+        </div>` : ''}
+      ${sorted.length===0 ? `<div class="empty">Todavía no has registrado ninguna aportación.</div>` :
+        sorted.map(i=>`
+          <div class="row">
+            <div>
+              <div style="font-size:14px;">${esc(i.name)}</div>
+              <div style="font-size:11px; color:var(--textFaint);">${monthLabel(i.month)}</div>
+            </div>
+            <div style="display:flex; align-items:center; gap:10px;">
+              <span style="font-family:var(--fontMono); color:var(--gold); font-size:14px;">${fmtEUR(i.amount)}</span>
+              <button class="btn-del" onclick="removeInvestment('${i.id}')">${ICONS.trash}</button>
+            </div>
+          </div>`).join('')}
+    </div>
+  `;
+}
+
+function simComputeResultHTML(){
+  const cats = categoryBreakdown();
+  const active = ui.simCategory || (cats[0] ? cats[0][0] : '');
+  const currentSpend = (cats.find(([c])=>c===active) || [null,0])[1];
+  const ingresos = sumBy(monthTx(), t=>t.type==='ingreso');
+  const gastosTotal = sumBy(monthTx(), t=>t.type!=='ingreso');
+  const ahorro = ingresos - gastosTotal;
+  const reductionEl = document.getElementById('simReduction');
+  const rawVal = reductionEl ? reductionEl.value : '';
+  const red = Math.min(parseFloat((rawVal||'0').replace(',','.'))||0, currentSpend);
+  const newAhorro = ahorro + red;
+  const newPct = ingresos>0 ? (newAhorro/ingresos)*100 : 0;
+  return `
+    <div class="sim-head">${ICONS.wand} Nuevo ahorro mensual</div>
+    <div class="sim-value">${fmtEUR(newAhorro)} <span style="font-size:14px; color:var(--greenDark);">(${newPct.toFixed(1)}%)</span></div>
+    <div class="sim-horizons">
+      ${[6,12,24].map(h=>`
+        <div>
+          <div class="sim-h-label">en ${h} meses</div>
+          <div class="sim-h-value">${fmtEUR(red*h)}</div>
+        </div>`).join('')}
+    </div>`;
+}
+function updateSimResult(){
+  const box = document.getElementById('simResultBox');
+  if(box) box.innerHTML = simComputeResultHTML();
+}
+
+function renderSimulador(){
+  const cats = categoryBreakdown();
+  const options = cats.map(([c])=>c);
+  if(!ui.simCategory && options.length) ui.simCategory = options[0];
+  const active = ui.simCategory || options[0] || '';
+
+  if(options.length===0){
+    return `<div class="card"><div class="card-head"><div class="card-title">¿Qué pasaría si...?</div></div><div class="empty">Registra gastos este mes para poder simular reducciones.</div></div>`;
+  }
+
+  return `
+    <div class="card">
+      <div class="card-head"><div class="card-title">¿Qué pasaría si...?</div></div>
+      <div style="font-size:13px; color:var(--textMuted); margin-bottom:10px;">Reduzco el gasto en</div>
+      <select id="simCategory" onchange="setSimCategory(this.value)">
+        ${options.map(c=>`<option value="${esc(c)}" ${c===active?'selected':''}>${esc(c)} (${fmtEUR(cats.find(([k])=>k===c)[1])})</option>`).join('')}
+      </select>
+      <input class="input" id="simReduction" type="number" inputmode="decimal" placeholder="€ menos al mes" oninput="updateSimResult()">
+      <div class="sim-result" id="simResultBox">${simComputeResultHTML()}</div>
+    </div>
+  `;
+}
+
+/* ---------------- main render ---------------- */
+function render(){
+  const ingresos = sumBy(monthTx(), t=>t.type==='ingreso');
+  const ahorroPct = ingresos>0 ? ((ingresos - sumBy(monthTx(), t=>t.type!=='ingreso'))/ingresos)*100 : 0;
+  const positive = ahorroPct >= 0;
+
+  const tabs = [
+    ['resumen','Resumen',ICONS.grid],
+    ['movimientos','Movimientos',ICONS.list],
+    ['inversiones','Inversión',ICONS.bank],
+    ['simulador','Simular',ICONS.wand],
+  ];
+
+  let body = '';
+  if(ui.tab==='resumen') body = renderResumen();
+  else if(ui.tab==='movimientos') body = renderMovimientos();
+  else if(ui.tab==='inversiones') body = renderInversiones();
+  else if(ui.tab==='simulador') body = renderSimulador();
+
+  document.getElementById('app').innerHTML = `
+    <div class="header">
+      <div class="eyebrow">Libro de ahorro</div>
+      <div class="ledger-strip">
+        <div>
+          <div class="ledger-label">Patrimonio acumulado (estimado)</div>
+          <div class="ledger-value">${fmtEUR(patrimonio())}</div>
+        </div>
+        <div style="text-align:right;">
+          <div class="ledger-label">Tasa de ahorro</div>
+          <div class="ledger-sub" style="color:${positive?'var(--greenDark)':'var(--rust)'};">${positive?'+':''}${ahorroPct.toFixed(1)}%</div>
+        </div>
+      </div>
+    </div>
+    <div class="month-nav">
+      <button class="icon-btn" onclick="navMonth(-1)">${ICONS.chevronLeft}</button>
+      <div class="month-label">${monthLabel(ui.month)}</div>
+      <button class="icon-btn" onclick="navMonth(1)">${ICONS.chevronRight}</button>
+    </div>
+    <main>${body}</main>
+    <div class="tabbar">
+      ${tabs.map(([key,label,icon])=>`
+        <button class="tab-btn ${ui.tab===key?'active':''}" onclick="setTab('${key}')">
+          ${icon}<span>${label}</span>
+        </button>`).join('')}
+    </div>
+  `;
+}
+
+loadState();
+render();
+</script>
+</body>
+</html>
